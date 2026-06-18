@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Game: Chiến Thần Bắt Trend (Có Giọng Đọc)</title>
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #a29bfe;
+            --dark: #2d3436;
+            --light: #dfe6e9;
+            --success: #00b894;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c20, #24243e, #300030);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        .badge {
+            background: var(--primary);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        h1, h2 {
+            margin-top: 0;
+        }
+
+        .progress-bar {
+            background: rgba(255,255,255,0.1);
+            height: 8px;
+            border-radius: 4px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress {
+            background: var(--success);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .question-box {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            min-height: 100px;
+        }
+
+        .btn-speak {
+            background: #fdcb6e;
+            color: #2d3436;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-show-answer {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
+        }
+
+        .btn-show-answer:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .answer-box {
+            background: rgba(0, 184, 148, 0.15);
+            border: 2px dashed var(--success);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            display: none;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        .btn-nav {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-nav:hover:not(:disabled) {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .btn-nav:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .leaderboard {
+            font-size: 2rem;
+            color: #ffeaa7;
+            margin-bottom: 20px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div id="game-screen">
+        <div id="round-badge" class="badge">VÒNG 1: ĐOÁN NHẠC HIỆU</div>
+        <div id="question-number" style="margin-bottom: 10px; color: var(--secondary);">Câu hỏi 1/10 (10 điểm)</div>
+        
+        <div class="progress-bar">
+            <div id="progress" class="progress"></div>
+        </div>
+
+        <div>
+            <button class="btn-speak" onclick="speakCurrentQuestion()">🔊 Nghe đọc câu hỏi</button>
+        </div>
+
+        <div id="question-text" class="question-box">
+            Đang tải câu hỏi...
+        </div>
+
+        <button id="btn-reveal" class="btn-show-answer" onclick="revealAnswer()">XEM ĐÁP ÁN</button>
+
+        <div id="answer-text" class="answer-box">
+            Đáp án ở đây!
+        </div>
+
+        <div class="nav-buttons">
+            <button id="btn-prev" class="btn-nav" onclick="prevQuestion()" disabled>◀ Câu trước</button>
+            <button id="btn-next" class="btn-nav" onclick="nextQuestion()">Câu tiếp ▶</button>
+        </div>
+    </div>
+
+    <div id="end-screen" style="display: none;">
+        <div class="leaderboard">🏆 TỔNG KẾT & VINH DANH 🏆</div>
+        <h2>Chúc Mừng Bạn Đã Hoàn Thành!</h2>
+        <p style="font-size: 1.1rem; line-height: 1.8;">
+            Thời gian thách thức bộ não bắt trend đã kết thúc.<br>
+            Hãy cộng tổng số điểm của mình (Tối đa <b>100 điểm</b>).
+        </p>
+        <blockquote style="background: rgba(255,255,255,0.05); padding: 15px; border-left: 5px solid var(--primary); border-radius: 4px; margin: 20px 0;">
+            "Xin chúc mừng Chiến thần bắt trend của ngày hôm nay, người có số điểm cao nhất và tốc độ nhanh nhất!"
+        </blockquote>
+        <button class="btn-show-answer" onclick="restartGame()" style="margin-top: 20px;">CHƠI LẠI TỪ ĐẦU</button>
+    </div>
+</div>
+
+<script>
+    // Dữ liệu câu hỏi kết hợp lời thoại MC của bạn
+    const questions = [
+        {
+            round: "VÒNG 1: NHÌN CHỮ ĐOÁN NHẠC HIỆU (30đ)",
+            num: "Câu 1 (10đ)",
+            q: "Khi bạn vừa bấm 'Tìm trận' trong một tựa game MOBA quốc dân, điện thoại rung lên và phát ra âm thanh dồn dập: “Tùng tùng tùng... XOẢNG!” kèm theo nút 'SẴN SÀNG' to đùng giữa màn hình.<br><br><b>Hỏi:</b> Âm thanh giật gân này báo hiệu bạn chuẩn bị bước vào trận chiến của tựa game nào?",
+            a: "Liên Quân Mobile hoặc Liên Minh Huyền Thoại.",
+            speakQ: "Câu một. Khi bạn vừa bấm Tìm trận trong một tựa game MOBA quốc dân, điện thoại rung lên và phát ra âm thanh dồn dập: Tùng tùng tùng, xoảng! kèm theo nút SẴN SÀNG to đùng giữa màn hình. Hỏi, âm thanh giật gân này báo hiệu bạn chuẩn bị bước vào trận chiến của tựa game nào?",
+            speakA: "Đáp án là: Liên Quân Mobile hoặc Liên Minh Huyền Thoại! Nghe tiếng này buổi đêm là giật bắn mình luôn!"
+        },
+        {
+            round: "VÒNG 1: NHÌN CHỮ ĐOÁN NHẠC HIỆU (30đ)",
+            num: "Câu 2 (10đ)",
+            q: "Trên TikTok đang rầm rộ đoạn nhạc nền của một bài hát mà nghe đến câu: 'À lôi... Người đẹp ơi, à lôi...' là ai cũng biết.<br><br><b>Hỏi:</b> Từ 'À lôi' trong đoạn nhạc trend này có nghĩa là gì trong tiếng đồng bào Tày?",
+            a: "'Ủa vậy hả' / 'Trời ơi' (Hoặc trả lời đúng tên bài hát 'À Lôi' của Double2T).",
+            speakQ: "Câu hai. Trên Tóp Tóp đang rầm rộ đoạn nhạc nền của một bài hát mà nghe đến câu: À lôi... Người đẹp ơi, à lôi... là ai cũng biết. Hỏi, từ À lôi trong đoạn nhạc trend này có nghĩa là gì trong tiếng đồng bào Tày, mà các bạn trẻ hay dùng để tỏ ý ngạc nhiên?",
+            speakA: "Đáp án chính là: Ủa vậy hả hoặc Trời ơi! Hoặc bạn nào trả lời đúng tên bài hát À Lôi của Double hai T là cũng có điểm nhé!"
+        },
+        {
+            round: "VÒNG 1: NHÌN CHỮ ĐOÁN NHẠC HIỆU (30đ)",
+            num: "Câu 3 (10đ)",
+            q: "Hãy tưởng tượng bạn đang lướt video biến hình hoặc clip ngắn, bỗng nhiên nghe thấy tiếng đọc trầm ấm bằng tiếng Anh: “CapCut... [tiếng nhạc giật giật bay lắc nổi lên]”.<br><br><b>Hỏi:</b> Đây là âm thanh thương hiệu (audio tag) xuất hiện ở cuối video của ứng dụng nào?",
+            a: "CapCut.",
+            speakQ: "Câu ba. Hãy tưởng tượng bạn đang lướt video biến hình hoặc clip ngắn, bỗng nhiên nghe thấy tiếng đọc trầm ấm bằng tiếng Anh: Cáp Cắt, ngay sau đó là tiếng nhạc giật giật nổi lên. Hỏi đây là âm thanh thương hiệu xuất hiện ở cuối video của ứng dụng nào?",
+            speakA: "Đáp án chính là ứng dụng Cáp Cắt! Quá quen thuộc với các chiến thần tóp tóp đúng không nào?"
+        },
+        {
+            round: "VÒNG 2: CHIẾN THẦN LƯỚT PHIM & THUẬT NGỮ (40đ)",
+            num: "Câu 4 (10đ)",
+            q: "Bạn lướt Facebook/TikTok và thấy mọi người bình luận cụm từ 'Cứu dữ chưa' hoặc 'Glow up' hay một từ lóng (slang) cực hot.<br><br><b>Hỏi:</b> Cụm từ 'Cứu dữ chưa' thường được Gen Z dùng trong hoàn cảnh nào? (Chọn phương án hài hước nhất).",
+            a: "Dùng khi gặp tình huống bất ổn, dở khóc dở cười nhưng không biết làm gì ngoài bất lực.",
+            speakQ: "Câu bốn. Bạn lướt Facebook hoặc Tóp Tóp và thấy mọi người bình luận cụm từ Cứu dữ chưa hoặc Gờ lâu ắp. Hỏi cụm từ Cứu dữ chưa thường được Gen Z dùng trong hoàn cảnh nào? Hãy chọn phương án hài hước nhất.",
+            speakA: "Đáp án chuẩn Gen Z là: Dùng khi gặp tình huống bất ổn, dở khóc dở cười nhưng bất lực, không biết làm gì ngoài kêu cứu!"
+        },
+        {
+            round: "VÒNG 2: CHIẾN THẦN LƯỚT PHIM & THUẬT NGỮ (40đ)",
+            num: "Câu 5 (10đ)",
+            q: "Một nhân vật hoạt hình màu vàng, thích ăn chuối, nói năng líu lo, xuất hiện ngập tràn trong các meme chế ảnh trên Facebook.<br><br><b>Hỏi:</b> Nhân vật đáng yêu này tên là gì và thuộc vũ trụ điện ảnh nào?",
+            a: "Minions (Trong phim Kẻ Trộm Mặt Trăng / Despicable Me).",
+            speakQ: "Câu năm. Một nhân vật hoạt hình màu vàng, thích ăn chuối, nói năng líu lo, xuất hiện ngập tràn trong các mê mê chế ảnh trên mạng. Hỏi nhân vật đáng yêu này tên là gì và thuộc vũ trụ điện ảnh nào?",
+            speakA: "Đáp án chính là: Những chú Minions đáng yêu trong bộ phim Kẻ Trộm Mặt Trăng!"
+        },
+        {
+            round: "VÒNG 2: CHIẾN THẦN LƯỚT PHIM & THUẬT NGỮ (40đ)",
+            num: "Câu 6 (10đ)",
+            q: "Trào lưu 'flex' (khoe thành tích một cách tinh tế hoặc hài hước) từng làm mưa làm gió.<br><br><b>Hỏi:</b> Nếu bạn khoe 'Hôm nay mình đi học muộn nhưng vừa kịp lúc thầy điểm danh xong', hành động này gọi là gì?",
+            a: "Flex (hoặc Flexing).",
+            speakQ: "Câu sáu. Trào lưu Phờ lếch từng làm mưa làm gió khắp cõi mạng. Nếu hôm nay bạn lên mạng khoe: Hôm nay mình đi học muộn nhưng vừa kịp lúc thầy điểm danh xong, thì hành động này gọi là gì?",
+            speakA: "Khoe như vậy người ta gọi là Phờ lếch, hoặc Phờ lếch xing đó nha!"
+        },
+        {
+            round: "VÒNG 2: CHIẾN THẦN LƯỚT PHIM & THUẬT NGỮ (40đ)",
+            num: "Câu 7 (10đ)",
+            q: "Tính năng 'Story' (Tin ngắn) trên Facebook và Instagram tồn tại trong bao lâu trước khi tự động biến mất?<br><br><b>Hỏi:</b> Điền số giờ chính xác vào chỗ trống.",
+            a: "24 giờ.",
+            speakQ: "Câu bảy. Tính năng Ét tô ri, hay còn gọi là Tin ngắn trên Facebook và Instagram, sẽ tồn tại trong vòng bao nhiêu tiếng trước khi tự động bốc hơi biến mất?",
+            speakA: "Con số chính xác của chúng ta là: Hai mươi tư giờ!"
+        },
+        {
+            round: "VÒNG 3: THỬ THÁCH 'TAY NHANH HƠN NÃO' (30đ)",
+            num: "Câu 8 (10đ)",
+            q: "Thử thách hành động tại chỗ.<br><br><b>Hỏi:</b> Hãy tạo dáng (pose) lại một điệu nhảy hoặc một cử chỉ tay (như thả tim kiểu mới) đang thịnh hành nhất trên mạng xã hội hiện nay. (Quản trò chấm điểm dựa trên độ lầy lội).",
+            a: "Thực hiện đúng hành động (Ví dụ: Thả tim kiểu Hàn Quốc, điệu nhảy See Tình,...).",
+            speakQ: "Câu tám. Thử thách hành động tại chỗ! Các bạn hãy ngay lập tức tạo dáng lại một điệu nhảy trend hoặc một cử chỉ tay thả tim kiểu mới đang thịnh hành nhất. Ba, hai, một, tạo dáng nào!",
+            speakA: "Tuyệt vời! Quản trò đã thấy rất nhiều kiểu thả tim Hàn Quốc và điệu nhảy See Tình rồi nha. Cộng điểm thôi!"
+        },
+        {
+            round: "VÒNG 3: THỬ THÁCH 'TAY NHANH HƠN NÃO' (30đ)",
+            num: "Câu 9 (10đ)",
+            q: "Trong một tựa game sinh tồn phối hợp đồng đội (Co-op) như Among Us hoặc Goose Goose Duck.<br><br><b>Hỏi:</b> Người chơi làm nhiệm vụ thì gọi là Dân (Crewmate), vậy kẻ chuyên đi ẩn nấp trong đường ống thông hơi để 'hại' người khác gọi là gì?",
+            a: "Kẻ mạo danh / Impostor / Vịt thối.",
+            speakQ: "Câu chín. Trong các tựa game sinh tồn phối hợp đồng đội kiểu như Among Us hay Goose Goose Duck. Người chơi phe chính diện đi làm nhiệm vụ thì gọi là Dân. Vậy kẻ chuyên đi ẩn nấp trong đường ống thông hơi để rình rình hại người khác thì gọi là gì?",
+            speakA: "Kẻ xấu xa đó chính là Kẻ mạo danh, hay còn gọi là Im bốt tơ, hoặc phe vịt thì gọi là Vịt thối!"
+        },
+        {
+            round: "VÒNG 3: THỬ THÁCH 'TAY NHANH HƠN NÃO' (30đ)",
+            num: "Câu 10 (10đ)",
+            q: "Cụm từ 'Ý em là sao?' hoặc câu hát viral của một Rapper/Ca sĩ nổi tiếng đang được Gen Z dùng làm nhạc nền quay video nhiều nhất tuần này.<br><br><b>Hỏi:</b> Điền nốt câu tiếp theo của câu hát đang là trend đó?",
+            a: "Cập nhật câu hát đang hot nhất tại thời điểm chơi (Ví dụ: 'Ý em là em thấy anh bảnh đúng không?').",
+            speakQ: "Câu mười. Cụm từ Ý em là sao, hoặc câu hát vai rồ của một ca sĩ đang được Gen Z dùng làm nhạc nền nhiều nhất tuần này. Hãy điền nốt câu tiếp theo của câu hát đang là trend đó để về đích nào!",
+            speakA: "Câu tiếp theo chính là câu hát đang làm mưa làm gió hiện tại. Ví dụ như: Ý em là em thấy anh bảnh đúng không? Chúc mừng các chiến thần!"
+        }
+    ];
+
+    let currentIndex = 0;
+
+    // Hàm xử lý giọng đọc tiếng Việt
+    function customSpeak(text) {
+        // Hủy các giọng đọc đang chạy dở trước đó để tránh bị đè tiếng
+        window.speechSynthesis.cancel();
+        
+        let utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'vi-VN'; // Cài đặt ngôn ngữ Tiếng Việt
+        utterance.rate = 0.95;    // Tốc độ đọc vừa phải, dễ nghe
+        utterance.pitch = 1.0;    // Độ cao của giọng đọc bình thường
+        
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function updateQuestion() {
+        // Cập nhật giao diện chữ
+        document.getElementById('round-badge').innerText = questions[currentIndex].round;
+        document.getElementById('question-number').innerText = `${questions[currentIndex].num} - Điểm: 10`;
+        document.getElementById('question-text').innerHTML = questions[currentIndex].q;
+        document.getElementById('answer-text').innerHTML = `<b>Đáp án:</b> ${questions[currentIndex].a}`;
+        
+        document.getElementById('answer-text').style.display = 'none';
+        document.getElementById('btn-reveal').style.display = 'inline-block';
+
+        let progressPercent = ((currentIndex + 1) / questions.length) * 100;
+        document.getElementById('progress').style.width = `${progressPercent}%`;
+
+        document.getElementById('btn-prev').disabled = currentIndex === 0;
+        document.getElementById('btn-next').innerText = currentIndex === questions.length - 1 ? "Tổng kết 🏁" : "Câu tiếp ▶";
+
+        // TỰ ĐỘNG ĐỌC CÂU HỎI KHI CHUYỂN CÂU
+        setTimeout(() => {
+            speakCurrentQuestion();
+        }, 300);
+    }
+
+    function speakCurrentQuestion() {
+        customSpeak(questions[currentIndex].speakQ);
+    }
+
+    function revealAnswer() {
+        document.getElementById('answer-text').style.display = 'block';
+        document.getElementById('btn-reveal').style.display = 'none';
+        // Đọc đáp án lên bằng giọng nói
+        customSpeak(questions[currentIndex].speakA);
+    }
+
+    function nextQuestion() {
+        if (currentIndex < questions.length - 1) {
+            currentIndex++;
+            updateQuestion();
+        } else {
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('end-screen').style.display = 'block';
+            customSpeak("Thời gian thách thức bộ não bắt trend đã chính thức khép lại. Xin chúc mừng chiến thần bắt trend của ngày hôm nay!");
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            updateQuestion();
+        }
+    }
+
+    function restartGame() {
+        currentIndex = 0;
+        document.getElementById('game-screen').style.display = 'block';
+        document.getElementById('end-screen').style.display = 'none';
+        updateQuestion();
+    }
+
+    // Khởi động câu đầu tiên
+    updateQuestion();
+</script>
+
+</body>
+</html>
